@@ -76,7 +76,9 @@ class Post(CreatedPublished):
         null=True
     )
     image = models.ImageField(
-        verbose_name='Изображение'
+        verbose_name='Изображение',
+        null=True,
+        blank=True
     )
 
     class Meta:

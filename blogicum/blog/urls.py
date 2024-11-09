@@ -22,6 +22,6 @@ urlpatterns = [
     path('category/<slug:category_slug>/', views.category_posts,
          name='category_posts'),
 
-    path('profile/<str:username>/', views.profile_view, name='profile'),
-    path('profile/edit/', views.edit_profile_view, name='edit_profile')
+    path('profile/edit/', views.edit_profile_view, name='edit_profile'),
+    path('profile/<str:username>/', views.profile_view, name='profile')
 ]

@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models.manager import BaseManager
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.views.decorators.http import require_POST
 from django.views.generic.edit import CreateView
 from django.urls import reverse_lazy
@@ -33,6 +33,8 @@ def profile_view(request, username):
         author=profile.pk
     ).annotate(
         comment_count=Count("comments")
+    ).order_by(
+        "-pub_date"
     )
     page_obj = Paginator(posts, PER_PAGE)
     page_obj = page_obj.get_page(request.GET.get('page'))
@@ -44,18 +46,20 @@ def profile_view(request, username):
 
 def edit_profile_view(request):
 
+    if not request.user.is_authenticated:
+        return redirect("login")
+    
     form = ProfileEditForm(instance=request.user)
 
     if request.method == 'POST':
         form = ProfileEditForm(request.POST)
 
         if form.is_valid():
-            form_instance = form.save(commit=False)
-            user = request.user
+            user = User.objects.get(pk=request.user.pk)
 
-            user.first_name = form_instance.cleaned_data["first_name"]
-            user.last_name = form_instance.cleaned_data["last_name"]
-            user.email = form_instance.cleaned_data["email"]
+            user.first_name = form.cleaned_data["first_name"]
+            user.last_name = form.cleaned_data["last_name"]
+            user.email = form.cleaned_data["email"]
 
             user.save()
 
@@ -83,10 +87,16 @@ def post_detail(request, post_id):
     now = datetime.now(timezone.utc)
     post_obj = get_object_or_404(
         Post,
-        pk=post_id,
-        pub_date__lte=now,
-        is_published=True,
-        category__is_published=True
+        Q(
+            pk=post_id,
+            pub_date__lte=now,
+            category__is_published=True,
+            is_published=True
+        ) |
+        Q(
+            pk=post_id,
+            author=request.user
+        )
     )
     comments = Comment.objects.filter(post=post_obj)
     context = {
@@ -148,10 +158,21 @@ def post_edit_view(request, post_id):
         Post,
         pk=post_id
     )
-    if not request.user.is_authenticated:
-        return redirect("login")
 
-    if request.user.pk != post.author.pk:
+    if request.method == 'POST':
+
+        post_form = PostForm(request.POST, request.FILES)
+        if request.user.pk == post.author.pk:
+
+            if post_form.is_valid():
+                post.text = post_form.cleaned_data["text"]
+                post.title = post_form.cleaned_data["title"]
+                post.pub_date = post_form.cleaned_data["pub_date"]
+                post.category = post_form.cleaned_data["category"]
+                post.location = post_form.cleaned_data["location"]
+                
+                post.save()
+
         return redirect("blog:post_detail", post_id=post_id)
 
     else:
@@ -258,6 +279,8 @@ def _filter_posts(posts: BaseManager[Post],
     now = datetime.now(timezone.utc)
     posts = posts.annotate(
         comment_count=Count("comments")
+    ).order_by(
+        "-pub_date"
     )
 
     if category_filtered:
