@@ -48,7 +48,7 @@ def edit_profile_view(request):
 
     if request.method == 'POST':
         form = ProfileEditForm(request.POST)
-        
+
         if form.is_valid():
             form_instance = form.save(commit=False)
             user = request.user
@@ -106,18 +106,16 @@ def category_posts(request, category_slug):
         is_published=True
     )
     posts = _filter_posts(category_obj.posts.select_related(
-            'location', 'author', 'category'
-        ),
+        'location', 'author', 'category'
+    ),
         category_filtered=True
     )
     page_obj = Paginator(posts, PER_PAGE)
     page_obj = page_obj.get_page(request.GET.get('page'))
 
-    return render(request, 'blog/category.html',
-        {
-            'page_obj': page_obj,
-            'category': category_obj
-        }
+    return render(request, 'blog/category.html', {
+        'page_obj': page_obj,
+        'category': category_obj}
     )
 
 
@@ -221,7 +219,7 @@ def comment_edit_view(request, post_id, comment_id):
                 comment.save()
 
         return redirect("blog:post_detail", post_id=post_id)
-        
+
     else:
         comment_form = CommentForm(instance=comment)
         context = {
@@ -245,7 +243,7 @@ def comment_delete_view(request, post_id, comment_id):
             comment.delete()
 
         return redirect("blog:post_detail", post_id=post_id)
-    
+
     else:
         context = {
             "comment": comment
