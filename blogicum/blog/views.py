@@ -44,11 +44,9 @@ def profile_view(request, username):
                    'page_obj': page_obj})
 
 
+@login_required
 def edit_profile_view(request):
 
-    if not request.user.is_authenticated:
-        return redirect("login")
-    
     form = ProfileEditForm(instance=request.user)
 
     if request.method == 'POST':
@@ -92,8 +90,7 @@ def post_detail(request, post_id):
             pub_date__lte=now,
             category__is_published=True,
             is_published=True
-        ) |
-        Q(
+        ) | Q(
             pk=post_id,
             author=request.user
         )
@@ -170,7 +167,7 @@ def post_edit_view(request, post_id):
                 post.pub_date = post_form.cleaned_data["pub_date"]
                 post.category = post_form.cleaned_data["category"]
                 post.location = post_form.cleaned_data["location"]
-                
+
                 post.save()
 
         return redirect("blog:post_detail", post_id=post_id)
