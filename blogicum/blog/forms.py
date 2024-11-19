@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from django.forms import ModelForm
+from django.forms import ModelForm, DateInput
 from .models import Post, Comment
 
 
@@ -7,6 +7,9 @@ class PostForm(ModelForm):
 
     class Meta:
         exclude = ('author', 'is_published', 'created_at')
+        widgets = {
+            'pub_date': DateInput(attrs={'type': 'date'})
+        }
         model = Post
 
 
